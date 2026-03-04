@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PR Code Reviewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #07090f;
+  --surface: #0e1219;
+  --border: rgba(255,255,255,0.07);
+  --accent: #00e676;
+  --critical: #ff4444;
+  --high: #ff8c00;
+  --medium: #f5c518;
+  --low: #4fc3f7;
+  --info: #78909c;
+  --text: #e0e0e0;
+  --text-dim: #8a8a9a;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+}
+
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+header h1 {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 2.4rem;
+  color: #fff;
+  letter-spacing: -1px;
+  margin-bottom: 12px;
+}
+
+header h1 span {
+  color: var(--accent);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 14px;
+  background: rgba(0,230,118,0.08);
+  border: 1px solid rgba(0,230,118,0.25);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+
+/* Input section */
+.input-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 700px) {
+  .input-section { grid-template-columns: 1fr; }
+}
+
+.input-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.input-card label {
+  display: block;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+textarea {
+  width: 100%;
+  height: 200px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 14px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+textarea:focus { border-color: var(--accent); }
+
+input[type="text"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="text"]::placeholder { color: var(--text-dim); }
+input[type="text"]:focus { border-color: var(--accent); }
+
+.url-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+.or-divider {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+/* Buttons */
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #07090f;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #00ff88;
+  box-shadow: 0 0 24px rgba(0,230,118,0.25);
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  color: var(--text);
+  border-color: rgba(255,255,255,0.2);
+}
+
+/* Loading */
+.loading {
+  display: none;
+  text-align: center;
+  padding: 60px 0;
+}
+
+.loading.active { display: block; }
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading p {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* Error */
+.error-msg {
+  display: none;
+  background: rgba(255,68,68,0.08);
+  border: 1px solid rgba(255,68,68,0.25);
+  border-radius: 10px;
+  padding: 16px 20px;
+  color: var(--critical);
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+
+.error-msg.active { display: block; }
+
+/* Results */
+#results {
+  display: none;
+}
+
+#results.active { display: block; }
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.rec-badge {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rec-badge.approve {
+  background: rgba(0,230,118,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(0,230,118,0.3);
+}
+
+.rec-badge.approve_with_changes {
+  background: rgba(245,197,24,0.12);
+  color: var(--medium);
+  border: 1px solid rgba(245,197,24,0.3);
+}
+
+.rec-badge.request_changes {
+  background: rgba(255,68,68,0.12);
+  color: var(--critical);
+  border: 1px solid rgba(255,68,68,0.3);
+}
+
+.severity-counts {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.severity-counts .count {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+.severity-counts .count.critical { background: rgba(255,68,68,0.12); color: var(--critical); }
+.severity-counts .count.high { background: rgba(255,140,0,0.12); color: var(--high); }
+.severity-counts .count.medium { background: rgba(245,197,24,0.12); color: var(--medium); }
+.severity-counts .count.low { background: rgba(79,195,247,0.12); color: var(--low); }
+.severity-counts .count.info { background: rgba(120,144,156,0.12); color: var(--info); }
+
+.summary-text {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 28px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+/* Finding cards */
+.finding-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  border-left: 3px solid var(--info);
+}
+
+.finding-card.critical { border-left-color: var(--critical); }
+.finding-card.high { border-left-color: var(--high); }
+.finding-card.medium { border-left-color: var(--medium); }
+.finding-card.low { border-left-color: var(--low); }
+.finding-card.info { border-left-color: var(--info); }
+
+.finding-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tag.severity-critical { background: rgba(255,68,68,0.15); color: var(--critical); }
+.tag.severity-high { background: rgba(255,140,0,0.15); color: var(--high); }
+.tag.severity-medium { background: rgba(245,197,24,0.15); color: var(--medium); }
+.tag.severity-low { background: rgba(79,195,247,0.15); color: var(--low); }
+.tag.severity-info { background: rgba(120,144,156,0.15); color: var(--info); }
+
+.tag.category {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-dim);
+}
+
+.file-ref {
+  font-size: 12px;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.finding-text {
+  font-size: 13px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.suggestion-box {
+  background: rgba(0,230,118,0.04);
+  border: 1px solid rgba(0,230,118,0.12);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(0,230,118,0.85);
+}
+
+.suggestion-box strong {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  opacity: 0.6;
+}
+
+.elapsed {
+  text-align: center;
+  margin-top: 28px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.elapsed span {
+  color: var(--accent);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>PR Code <span>Reviewer</span></h1>
+    <div class="badge">gpt-5.1-codex-mini &middot; responses api</div>
+  </header>
+
+  <div class="input-section">
+    <div class="input-card">
+      <label>Paste Diff</label>
+      <textarea id="diffInput" placeholder="Paste your PR diff here..."></textarea>
+    </div>
+    <div class="input-card">
+      <label>GitHub PR URL</label>
+      <input type="text" id="urlInput" placeholder="https://github.com/owner/repo/pull/123">
+      <p class="url-hint">Public repos only. The .diff is fetched server-side.</p>
+      <p class="or-divider">Use either input &mdash; URL takes priority if both are filled.</p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="runBtn" onclick="runReview()">Run Review</button>
+    <button class="btn btn-secondary" onclick="loadSample()">Load Sample Diff</button>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Analyzing diff with gpt-5.1-codex-mini&hellip;</p>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+const SAMPLE_DIFF = `diff --git a/auth/login.js b/auth/login.js
+--- a/auth/login.js
++++ b/auth/login.js
+@@ -12,8 +12,14 @@ const router = express.Router();
+ router.post('/login', async (req, res) => {
+-  const { username, password } = req.body;
+-  const user = await db.query('SELECT * FROM users WHERE username = ?', [username]);
++  const username = req.body.username;
++  const password = req.body.password;
++  const user = await db.query(
++    \`SELECT * FROM users WHERE username = '\${username}'\`
++  );
+   if (!user || user.password !== password) {
+     return res.status(401).json({ error: 'Invalid credentials' });
+   }
++  console.log('Login attempt:', username, password);
+   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
+   res.json({ token });
++  res.status(200);
+ });`;
+
+function loadSample() {
+  document.getElementById('diffInput').value = SAMPLE_DIFF;
+  document.getElementById('urlInput').value = '';
+  document.getElementById('errorMsg').classList.remove('active');
+  document.getElementById('results').classList.remove('active');
+}
+
+async function runReview() {
+  const url = document.getElementById('urlInput').value.trim();
+  const diff = document.getElementById('diffInput').value.trim();
+  const errorEl = document.getElementById('errorMsg');
+  const loadingEl = document.getElementById('loading');
+  const resultsEl = document.getElementById('results');
+  const btn = document.getElementById('runBtn');
+
+  errorEl.classList.remove('active');
+  resultsEl.classList.remove('active');
+
+  if (!url && !diff) {
+    errorEl.textContent = 'Provide a diff or a GitHub PR URL.';
+    errorEl.classList.add('active');
+    return;
+  }
+
+  btn.disabled = true;
+  loadingEl.classList.add('active');
+
+  const startTime = performance.now();
+
+  try {
+    let endpoint, body;
+    if (url) {
+      endpoint = '/api/review-url';
+      body = { url };
+    } else {
+      endpoint = '/api/review';
+      body = { diff };
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || `Server returned ${res.status}`);
+    }
+
+    const clientElapsed = Math.round(performance.now() - startTime);
+    renderResults(data, clientElapsed);
+
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.add('active');
+  } finally {
+    btn.disabled = false;
+    loadingEl.classList.remove('active');
+  }
+}
+
+function renderResults(data, clientMs) {
+  const el = document.getElementById('results');
+
+  // Count severities
+  const counts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+  data.findings.forEach(f => counts[f.severity]++);
+
+  const countPills = Object.entries(counts)
+    .filter(([, n]) => n > 0)
+    .map(([sev, n]) => `<span class="count ${sev}">${n} ${sev}</span>`)
+    .join('');
+
+  const recLabel = data.recommendation.replace(/_/g, ' ');
+
+  let html = `
+    <div class="result-header">
+      <div class="rec-badge ${data.recommendation}">${recLabel}</div>
+      <div class="severity-counts">${countPills}</div>
+    </div>
+    <div class="summary-text">${escapeHtml(data.summary)}</div>
+  `;
+
+  data.findings.forEach(f => {
+    const fileRef = f.line_reference
+      ? `${f.file}:${f.line_reference}`
+      : f.file;
+    html += `
+      <div class="finding-card ${f.severity}">
+        <div class="finding-meta">
+          <span class="tag severity-${f.severity}">${f.severity}</span>
+          <span class="tag category">${f.category}</span>
+          <span class="file-ref">${escapeHtml(fileRef)}</span>
+        </div>
+        <div class="finding-text">${escapeHtml(f.finding)}</div>
+        <div class="suggestion-box">
+          <strong>Suggestion</strong>
+          ${escapeHtml(f.suggestion)}
+        </div>
+      </div>
+    `;
+  });
+
+  const serverMs = data.elapsed_ms || '?';
+  html += `<div class="elapsed">Completed in <span>${serverMs}ms</span> (API) &middot; ${clientMs}ms (total)</div>`;
+
+  el.innerHTML = html;
+  el.classList.add('active');
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
