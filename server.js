@@ -54,7 +54,9 @@ const REVIEW_SCHEMA = {
 const INSTRUCTIONS = `You are a senior software engineer performing a thorough code review.
 Analyze the PR diff for: security vulnerabilities, logic errors, performance issues,
 style violations, and missing error handling. Be specific — reference file names and
-line numbers where possible. Prioritize security findings.`;
+line numbers where possible. Prioritize security findings.
+When you encounter a dependency, API pattern, or code construct that may have known
+vulnerabilities or CVEs, use web search to check for current security advisories.`;
 
 async function reviewDiff(diff) {
   const start = Date.now();
@@ -63,6 +65,7 @@ async function reviewDiff(diff) {
     model: MODEL,
     instructions: INSTRUCTIONS,
     input: `Review this PR diff:\n\n${diff}`,
+    tools: [{ type: 'web_search_preview' }],
     text: {
       format: REVIEW_SCHEMA
     }
